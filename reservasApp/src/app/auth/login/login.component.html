@@ -1,0 +1,41 @@
+<div class="login-wrapper">
+  <mat-card class="login-card mat-elevation-z3">
+    <mat-card-header>
+      <div class="header-icon-container">
+        <mat-icon color="primary" class="header-icon">hotel</mat-icon>
+      </div>
+      <mat-card-title>Grand Hotel Sys</mat-card-title>
+      <mat-card-subtitle>Ingresa tus credenciales para acceder al sistema</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="form" (ngSubmit)="ingresar()">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Usuario</mat-label>
+          <input matInput formControlName="username" autocomplete="username">
+          <mat-icon matPrefix>person</mat-icon>
+          <mat-error *ngIf="form.get('username')?.hasError('required')">
+            El usuario es requerido
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Contraseña</mat-label>
+          <input matInput [type]="ocultarPassword ? 'password' : 'text'" formControlName="password" autocomplete="current-password">
+          <mat-icon matPrefix>lock</mat-icon>
+          <button mat-icon-button matSuffix type="button" (click)="ocultarPassword = !ocultarPassword">
+            <mat-icon>{{ ocultarPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          <mat-error *ngIf="form.get('password')?.hasError('required')">
+            La contraseña es requerida
+          </mat-error>
+        </mat-form-field>
+
+        <button mat-flat-button color="primary" class="full-width btn-ingresar" type="submit" [disabled]="cargando">
+          <mat-spinner diameter="20" *ngIf="cargando" class="spinner-center"></mat-spinner>
+          <span *ngIf="!cargando">Iniciar Sesión</span>
+        </button>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</div>

@@ -1,0 +1,55 @@
+<mat-sidenav-container class="contenedor">
+  <mat-sidenav #sidenav mode="side" [opened]="sidenavAbierto" class="sidenav">
+    <div class="logo">
+      <mat-icon color="primary">hotel</mat-icon>
+      <span>Grand Hotel Sys</span>
+    </div>
+
+    <mat-divider></mat-divider>
+
+    <mat-nav-list>
+      <ng-container *ngFor="let item of menuItems">
+        <a mat-list-item
+           *ngIf="item.label !== 'Usuarios' || isAdmin"
+           [routerLink]="item.disponible ? item.route : null"
+           routerLinkActive="activo"
+           [class.deshabilitado]="!item.disponible">
+          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+          <span matListItemTitle>{{ item.label }}</span>
+          <span class="pronto" *ngIf="!item.disponible">Próximamente</span>
+        </a>
+      </ng-container>
+    </mat-nav-list>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <mat-toolbar class="toolbar">
+      <button mat-icon-button (click)="toggleSidenav()" matTooltip="Alternar menú">
+        <mat-icon>menu</mat-icon>
+      </button>
+
+      <span class="titulo">Gestión de Reservaciones</span>
+
+      <span class="spacer"></span>
+
+      <div class="usuario-info" *ngIf="username">
+        <mat-icon class="usuario-icono">account_circle</mat-icon>
+        <span>{{ username }}</span>
+      </div>
+
+      <button mat-icon-button
+              (click)="themeService.alternar()"
+              [matTooltip]="themeService.esOscuro ? 'Modo claro' : 'Modo oscuro'">
+        <mat-icon>{{ themeService.esOscuro ? 'light_mode' : 'dark_mode' }}</mat-icon>
+      </button>
+
+      <button mat-icon-button color="warn" (click)="cerrarSesion()" matTooltip="Cerrar sesión">
+        <mat-icon>logout</mat-icon>
+      </button>
+    </mat-toolbar>
+
+    <div class="contenido">
+      <router-outlet></router-outlet>
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>

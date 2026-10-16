@@ -1,0 +1,61 @@
+<h1 class="titulo-pagina">Panel de Control</h1>
+<p class="subtitulo">Resumen general del sistema de reservas hoteleras</p>
+
+<div class="grid-cards">
+
+  <!-- Reservaciones -->
+  <mat-card class="card-metrica deshabilitada">
+    <mat-card-content>
+      <mat-icon class="icono">calendar_month</mat-icon>
+      <div>
+        <p class="numero">—</p>
+        <p class="etiqueta">Reservaciones activas</p>
+      </div>
+    </mat-card-content>
+    <mat-card-actions>
+      <span class="pronto">Próximamente</span>
+    </mat-card-actions>
+  </mat-card>
+
+  <!-- Habitaciones -->
+  <mat-card class="card-metrica deshabilitada">
+    <mat-card-content>
+      <mat-icon class="icono">bed</mat-icon>
+      <div>
+        <p class="numero">—</p>
+        <p class="etiqueta">Habitaciones disponibles</p>
+      </div>
+    </mat-card-content>
+    <mat-card-actions>
+      <span class="pronto">Próximamente</span>
+    </mat-card-actions>
+  </mat-card>
+
+  <!-- Huéspedes -->
+  <mat-card class="card-metrica deshabilitada">
+    <mat-card-content>
+      <mat-icon class="icono">people</mat-icon>
+      <div>
+        <p class="numero">—</p>
+        <p class="etiqueta">Huéspedes registrados</p>
+      </div>
+    </mat-card-content>
+    <mat-card-actions>
+      <span class="pronto">Próximamente</span>
+    </mat-card-actions>
+  </mat-card>
+
+  <!-- Usuarios (Activo) -->
+  <mat-card class="card-metrica" *ngIf="isAdmin">
+    <mat-card-content>
+      <mat-icon class="icono" color="primary">manage_accounts</mat-icon>
+      <div>
+        <p class="numero">{{ cargando ? '—' : totalUsuarios }}</p>
+        <p class="etiqueta">Usuarios registrados</p>
+      </div>
+    </mat-card-content>
+    <mat-card-actions>
+      <a mat-button color="primary" routerLink="/usuarios">Ver usuarios</a>
+    </mat-card-actions>
+  </mat-card>
+</div>
