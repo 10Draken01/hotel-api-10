@@ -28,11 +28,10 @@ administrador. Si utilizas Oracle Database Free, normalmente será
 Ejecuta:
 
 ``` sql
-CREATE USER hotel IDENTIFIED BY hotel;
-
-GRANT CREATE SESSION, CREATE TABLE, CREATE VIEW TO hotel;
-
-ALTER USER hotel QUOTA UNLIMITED ON USERS;
+alter session set "_oracle_script"=true;
+create user hotel identified by hotel;
+GRANT ALL PRIVILEGES TO hotel;
+COMMIT;
 ```
 
 La contraseña `hotel` es solo un valor de ejemplo. En entornos
@@ -130,7 +129,7 @@ El diagrama entidad-relación (E-R) permite consultar visualmente las
 entidades y sus relaciones.
 
 -   [Consultar o publicar el diagrama en
-    dbdiagram.io](https://dbdiagram.io/)
+    dbdiagram.io](https://dbdiagram.io/d/6859837df039ec6d36824cad)
 
 Sustituye este enlace por la URL específica del diagrama del proyecto
 cuando esté disponible.
