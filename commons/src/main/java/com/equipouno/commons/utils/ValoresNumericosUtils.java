@@ -1,7 +1,7 @@
 package com.equipouno.commons.utils;
 
 
-import com.draken.commons.exceptions.DatoInvalidoException;
+import com.equipouno.commons.exceptions.DatoInvalidoException;
 
 import java.math.BigDecimal;
 
