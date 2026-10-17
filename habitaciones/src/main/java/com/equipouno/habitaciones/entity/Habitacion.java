@@ -31,7 +31,7 @@ public class Habitacion {
     @Column(name = "TIPO")
     private Tipo tipo;
 
-    @Column(name = "PRECIO")
+    @Column(name = "PRECIO", columnDefinition = "NUMBER(10,2)")
     private Double precio;
 
     @Column(name = "CAPACIDAD")
@@ -64,20 +64,34 @@ public class Habitacion {
         this.estadoRegistro = EstadoRegistro.ELIMINADO;
     }
 
-    public void actualizarEstadoManualmente(Estado nuevoEstado){
-        if(nuevoEstado == null)
-            throw new DatoInvalidoException("El nuevo estado es requerido");
-        if(nuevoEstado == estado)
-            throw new ConflictoException("El nuevo estado debe ser diferente al actual");
-        if (nuevoEstado == Estado.OCUPADA)
-            throw new ConflictoException("No puede actualizar manualmente una habitacion ocupada");
+    public void actualizarEstadoManualmente(Estado nuevoEstado) {
+        if (nuevoEstado == null) {
+            throw new DatoInvalidoException("El nuevo estado es requerido"); // -> 400 Bad Request
+        }
+        if (nuevoEstado == this.estado) {
+            throw new ConflictoException("La habitación ya se encuentra en el estado " + nuevoEstado); // -> 409 Conflict
+        }
+        if (nuevoEstado == Estado.OCUPADA) {
+            throw new ConflictoException("No se puede cambiar manualmente el estado a OCUPADA"); // -> 409 Conflict
+        }
+        if (this.estado == Estado.OCUPADA) {
+            throw new ConflictoException("Una habitación OCUPADA no se puede cambiar de estado manualmente"); // -> 409 Conflict
+        }
+
+        //Metodo del enum (tovia tengo dudas en si dejarlo asi XD)
+        if (!this.estado.puedeCambiarManualmenteA(nuevoEstado)) {
+            throw new ConflictoException(
+                    String.format("No se permite cambiar manualmente de %s a %s", this.estado, nuevoEstado)
+            ); // -> 409 Conflict
+        }
 
         this.estado = nuevoEstado;
     }
 
-    public void actualizar(Integer numero, Double precio, Integer capacidad){
+    public void actualizar(Integer numero, Double precio, Integer capacidad, Tipo tipo){
         validarNoEliminado();
         validarDatos(numero, precio, capacidad);
+        actualizarTipo(tipo);
 
         this.numero = numero;
         this.precio = precio;

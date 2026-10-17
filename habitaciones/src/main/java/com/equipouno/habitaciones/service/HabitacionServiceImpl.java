@@ -3,9 +3,10 @@ package com.equipouno.habitaciones.service;
 import com.equipouno.commons.enums.EstadoRegistro;
 import com.equipouno.commons.exceptions.DatoInvalidoException;
 import com.equipouno.commons.exceptions.RecursoNoEncontradoException;
-import com.equipouno.habitaciones.dto.HabitacionRequest;
-import com.equipouno.habitaciones.dto.HabitacionResponse;
+import com.equipouno.commons.dto.habitaciones.HabitacionRequest;
+import com.equipouno.commons.dto.habitaciones.HabitacionResponse;
 import com.equipouno.habitaciones.entity.Habitacion;
+import com.equipouno.habitaciones.enums.Estado;
 import com.equipouno.habitaciones.enums.Tipo;
 import com.equipouno.habitaciones.mapper.HabitacionMapper;
 import com.equipouno.habitaciones.repository.HabitacionRepository;
@@ -27,13 +28,28 @@ public class HabitacionServiceImpl implements HabitacionService {
     //GET /id-habitacion/{id} - obtener habitacionResponse por id sin estado
     @Override
     public HabitacionResponse obtenerHabitacionPorIdSinEstado(Long id) {
-        return null;
+        log.info("Buscando habitacion sin estadoRegistro con id {}", id);
+        return habitacionMapper.entidadAResponse(habitacionRepository.findById(id).orElseThrow(
+                () -> new RecursoNoEncontradoException("Habitacion sin estado no encontrada con id: " + id)
+        ));
     }
 
     //PATCH /{id}/estado/{idEstado} - actualizar manualmente el estado de la habitacion
     @Override
     public void actualizarEstadoHabitacionManualmente(Long idHabitacion, Long idNuevoEstado) {
+        Habitacion habitacion = obtenerHabitacionActivaPorId(idHabitacion);
+        log.info("Actualizando estado de la habitacion con id {}", idHabitacion);
 
+        // Obtengo el enum por código (si falla, lanza DatoInvalidoException -> 400)
+        Estado nuevoEstado = Estado.obtenerPorCodigo(idNuevoEstado);
+        Estado viejoEstado = habitacion.getEstado();
+
+        // La entidad ejecuta y valida la regla con sus propios métodos (si falla, lanza ConflictoException -> 409)
+        habitacion.actualizarEstadoManualmente(nuevoEstado);
+
+        habitacionRepository.save(habitacion);
+
+        log.info("Estado de habitacion con id {} cambio de {} a {}", idHabitacion, viejoEstado, nuevoEstado);
     }
 
     @Override
@@ -68,10 +84,21 @@ public class HabitacionServiceImpl implements HabitacionService {
     @Override
     public HabitacionResponse actualizar(HabitacionRequest request, Long id) {
         Habitacion habitacion = obtenerHabitacionActivaPorId(id);
-        //
+        //Segun las reglas de negocio si se puede actualizar los datos de habitacion aunque este ocupada
+        //Nomas que ocupo la reserva vigente para ver con cuantos se declaro JAJA
         validarCambiosUnicos(request, id);
 
-        return null;
+        log.info("Actualizando habitacion con id: {}", id);
+
+        habitacion.actualizar(
+                request.numero(),
+                request.precio(),
+                request.capacidad(),
+                Tipo.obtenerEstadoHabitacionPorCodigo(request.idTipo())
+        );
+        habitacionRepository.saveAndFlush(habitacion);
+        log.info("Habitacion con id {} actualizada", id);
+        return habitacionMapper.entidadAResponse(habitacion);
     }
 
     @Override

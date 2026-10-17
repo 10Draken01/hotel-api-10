@@ -1,9 +1,8 @@
 package com.equipouno.habitaciones.service;
 
 import com.equipouno.commons.services.CrudService;
-import com.equipouno.habitaciones.dto.HabitacionRequest;
-import com.equipouno.habitaciones.dto.HabitacionResponse;
-import com.equipouno.habitaciones.enums.Estado;
+import com.equipouno.commons.dto.habitaciones.HabitacionRequest;
+import com.equipouno.commons.dto.habitaciones.HabitacionResponse;
 
 public interface HabitacionService extends CrudService<HabitacionRequest, HabitacionResponse> {
     /* Siguiendo las reglas de negocio tengo que implementar estos endpoints

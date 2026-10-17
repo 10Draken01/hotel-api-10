@@ -2,8 +2,8 @@ package com.equipouno.habitaciones.mapper;
 
 
 import com.equipouno.commons.mapper.CommonMapper;
-import com.equipouno.habitaciones.dto.HabitacionRequest;
-import com.equipouno.habitaciones.dto.HabitacionResponse;
+import com.equipouno.commons.dto.habitaciones.HabitacionRequest;
+import com.equipouno.commons.dto.habitaciones.HabitacionResponse;
 import com.equipouno.habitaciones.entity.Habitacion;
 import com.equipouno.habitaciones.enums.Tipo;
 import org.springframework.stereotype.Component;
