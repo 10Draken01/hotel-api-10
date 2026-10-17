@@ -41,7 +41,10 @@ public class CrudController<RQ,RS,S extends CrudService<RQ, RS>> {
     protected final S service;
 
     @GetMapping
-    @Operation
+    @Operation(
+            summary = "Listar registros",
+            description = "Obtiene una lista de todos los registros disponibles"
+    )
     @ApiResponse(
             responseCode = "200",
             description = "Lista de registros"
