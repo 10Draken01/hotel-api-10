@@ -3,6 +3,7 @@ package com.equipouno.huespedes.services;
 import com.equipouno.commons.dto.huespedes.HuespedRequest;
 import com.equipouno.commons.dto.huespedes.HuespedResponse;
 import com.equipouno.commons.enums.EstadoRegistro;
+import com.equipouno.commons.exceptions.ConflictoException;
 import com.equipouno.commons.exceptions.RecursoNoEncontradoException;
 import com.equipouno.huespedes.entities.Huesped;
 import com.equipouno.huespedes.enums.TipoDocumento;
@@ -47,6 +48,8 @@ public class HuespedServiceImpl implements HuespedService{
     public HuespedResponse registrar(HuespedRequest request) {
         log.info("Registrando nuevo huesped: {}", request);
 
+        validarHuespedUnico(request);
+
         TipoDocumento tipoDocumento = TipoDocumento.obtenerPorDescripcion(
                 request.tipoDocumento()
         );
@@ -64,6 +67,7 @@ public class HuespedServiceImpl implements HuespedService{
     @Override
     public HuespedResponse actualizar(HuespedRequest request, Long id) {
         log.info("Actualizando huesped con id: {}", id);
+        validarHuespedCambiosUnicos(request, id);
 
         Huesped huesped = obtenerHuespedActivo(id);
 
@@ -114,5 +118,60 @@ public class HuespedServiceImpl implements HuespedService{
                 id,
                 Huesped.class
         );
+    }
+
+    private void validarHuespedUnico(HuespedRequest request){
+        if (huespedRepository.existsByEmailAndEstadoRegistro(
+                request.email(),
+                EstadoRegistro.ACTIVO
+        ))
+            throw new ConflictoException(
+                    "Ya existe un huesped con el email: " + request.email()
+            );
+        if(huespedRepository.existsByTelefonoAndEstadoRegistro(
+                request.telefono(),
+                EstadoRegistro.ACTIVO
+        ))
+            throw new ConflictoException(
+                    "Ya existe un huesped con el telefono: " + request.telefono()
+            );
+        if(huespedRepository.existsByTipoDocumentoAndNumeroDocumentoAndEstadoRegistro(
+                    TipoDocumento.obtenerPorDescripcion(request.tipoDocumento()),
+                    request.numeroDocumento(),
+                    EstadoRegistro.ACTIVO
+        ))
+            throw new ConflictoException(
+                    "Ya existe un huesped con el tipo de documento: " + request.tipoDocumento() +
+                            " y numero de documento: " + request.numeroDocumento()
+            );
+    }
+
+    private void validarHuespedCambiosUnicos(HuespedRequest request, Long idExclude){
+        if (huespedRepository.existsByEmailAndEstadoRegistroAndIdNot(
+                request.email(),
+                EstadoRegistro.ACTIVO,
+                idExclude
+        ))
+            throw new ConflictoException(
+                    "Ya existe un huesped con el email: " + request.email()
+            );
+        if(huespedRepository.existsByTelefonoAndEstadoRegistroAndIdNot(
+                request.telefono(),
+                EstadoRegistro.ACTIVO,
+                idExclude
+        ))
+            throw new ConflictoException(
+                    "Ya existe un huesped con el telefono: " + request.telefono()
+            );
+        if(huespedRepository.existsByTipoDocumentoAndNumeroDocumentoAndEstadoRegistroAndIdNot(
+                TipoDocumento.obtenerPorDescripcion(request.tipoDocumento()),
+                request.numeroDocumento(),
+                EstadoRegistro.ACTIVO,
+                idExclude
+        ))
+            throw new ConflictoException(
+                    "Ya existe un huesped con el tipo de documento: " + request.tipoDocumento() +
+                            " y numero de documento: " + request.numeroDocumento()
+            );
     }
 }

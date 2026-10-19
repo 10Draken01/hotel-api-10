@@ -117,12 +117,34 @@ public class Reserva {
 
     public void eliminar(){
         validarNoEliminado();
+        if(
+                this.estadoReserva.equals(EstadoReserva.CONFIRMADA) ||
+                this.estadoReserva.equals(EstadoReserva.EN_CURSO)
+        )
+            throw new ConflictoException(
+                    "La reserva con id: " + id + " no puede ser eliminada porque se encuentra en estado: " + this.estadoReserva.getDescripcion()
+            );
         this.estadoRegistro = EstadoRegistro.ELIMINADO;
     }
 
-    public void asignarEstadoReserva(EstadoReserva estadoReserva){
+    private void validarEstadoReservaNoNulo(EstadoReserva estadoReserva){
         if(estadoReserva == null)
             throw new ConflictoException("El estado de la reserva no puede ser nulo");
+    }
+
+    public void asignarEstadoReserva(EstadoReserva estadoReserva){
+        validarEstadoReservaNoNulo(estadoReserva);
+        this.estadoReserva = estadoReserva;
+    }
+
+    public void cambiarEstadoReserva(EstadoReserva estadoReserva){
+        validarEstadoReservaNoNulo(estadoReserva);
+        validarNoEliminado();
+        if(!this.estadoReserva.puedeCambiarA(estadoReserva))
+            throw new ConflictoException(
+                    "El estado de la reserva no puede cambiar de " + this.estadoReserva.getDescripcion() +
+                            " a " + estadoReserva.getDescripcion()
+            );
         this.estadoReserva = estadoReserva;
     }
 
@@ -146,7 +168,7 @@ public class Reserva {
                 precioNoche,
                 precioTotal
         );
-        asignarEstadoReserva(estadoReserva);
+        cambiarEstadoReserva(estadoReserva);
         this.idHuesped = idHuesped;
         this.idHabitacion = idHabitacion;
         this.fechaEntrada = fechaEntrada;

@@ -2,6 +2,9 @@ package com.equipouno.reservas.repositories;
 
 import com.equipouno.commons.enums.EstadoRegistro;
 import com.equipouno.reservas.entities.Reserva;
+import com.equipouno.reservas.enums.EstadoReserva;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -9,6 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -16,6 +20,11 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
     List<Reserva> findByEstadoRegistro(EstadoRegistro estadoRegistro);
 
     Optional<Reserva> findByIdAndEstadoRegistro(Long id, EstadoRegistro estadoRegistro);
+
+    Page<Reserva> findByEstadoReservaWithPage(
+            EstadoReserva estadoReserva,
+            Pageable pageable
+    );
 
     // Para verificar si existe un traslape de fechas para una reserva en una habitacion específica,
     // excluyendo una reserva específica (por ejemplo, al actualizar una reserva existente).

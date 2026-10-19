@@ -18,6 +18,8 @@ import com.equipouno.reservas.utils.ServiceUtils;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,6 +51,35 @@ public class ReservaServiceImpl implements ReservaService{
                                 obtenerHabitacion(r.getIdHabitacion())
                         )
                 ).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ReservaResponse> listarHistoricoReservas() {
+        return reservaRepository.findAll().stream()
+                .map(r ->
+                        reservaMapper.entidadAResponse(
+                                r,
+                                obtenerHuespedSinEstado(r.getIdHuesped()),
+                                obtenerHabitacionSinEstado(r.getIdHabitacion())
+                        )
+                ).toList();
+    }
+
+    @Override
+    public Page<ReservaResponse> listarReservasAgrupadasEstadoReservaSinEstado(Long codigoEstadoReserva, Pageable pageable) {
+        log.info("Listando reservas agrupadas por estado de reserva sin estado: {}", codigoEstadoReserva);
+
+        EstadoReserva estadoReserva = EstadoReserva.obtenerPorCodigo(codigoEstadoReserva);
+
+        return reservaRepository.findByEstadoReservaWithPage(estadoReserva, pageable)
+                .map(r ->
+                        reservaMapper.entidadAResponse(
+                                r,
+                                obtenerHuespedSinEstado(r.getIdHuesped()),
+                                obtenerHabitacionSinEstado(r.getIdHabitacion())
+                        )
+                );
     }
 
     @Override
@@ -106,8 +137,38 @@ public class ReservaServiceImpl implements ReservaService{
     }
 
     @Override
-    public void eliminar(Long id) {
+    public void actualizarEstadoReserva(Long idReserva, Long codigoEstadoReserva) {
+        log.info("Actualizando estado de la reserva con id {} a estado {}", idReserva, codigoEstadoReserva);
+        Reserva reserva = obtenerReservaActiva(idReserva);
+        EstadoReserva nuevoEstadoReserva = EstadoReserva.obtenerPorCodigo(codigoEstadoReserva);
+        EstadoReserva estadoReservaAnterior = reserva.getEstadoReserva();
 
+        reserva.cambiarEstadoReserva(nuevoEstadoReserva);
+
+        cambiarDisponibilidadHabitacionSegunEstadoReserva(
+                reserva.getIdHabitacion(),
+                nuevoEstadoReserva
+        );
+
+        reservaRepository.saveAndFlush(reserva);
+        log.info("Estado de la reserva con id {} actualizado de {} a {}", idReserva, estadoReservaAnterior, nuevoEstadoReserva);
+    }
+
+    @Override
+    public void eliminar(Long id) {
+        log.info("Eliminando reserva con id {}", id);
+        Reserva reserva = obtenerReservaActiva(id);
+
+        // esto valida que el estado de la reserva sea o FINALIZADA o CANCELADA, si no lo es lanza una excepcion
+        reserva.eliminar();
+
+        cambiarDisponibilidadHabitacionSegunEstadoReserva(
+                reserva.getIdHabitacion(),
+                reserva.getEstadoReserva()
+        );
+
+        reservaRepository.saveAndFlush(reserva);
+        log.info("Reserva con id {} eliminada", id);
     }
 
     private Reserva obtenerReservaActiva(Long id){
@@ -134,10 +195,22 @@ public class ReservaServiceImpl implements ReservaService{
         return huespedClient.obtenerHuespedPorId(idHuesped).getBody();
     }
 
+    private HuespedResponse obtenerHuespedSinEstado(Long idHuesped){
+        log.info("Obteniendo huesped sin estado con id {}", idHuesped);
+
+        return huespedClient.obtenerHuespedPorIdSinEstado(idHuesped).getBody();
+    }
+
     private HabitacionResponse obtenerHabitacion(Long idHabitacion){
         log.info("Obteniendo habitacion con id {}", idHabitacion);
 
         return habitacionClient.obtenerHabitacionPorId(idHabitacion).getBody();
+    }
+
+    private HabitacionResponse obtenerHabitacionSinEstado(Long idHabitacion){
+        log.info("Obteniendo habitacion sin estado con id {}", idHabitacion);
+
+        return habitacionClient.obtenerHabitacionPorIdSinEstado(idHabitacion).getBody();
     }
 
     private HabitacionResponse obtenerHabitacionDisponible(Long idHabitacion){
@@ -172,9 +245,11 @@ public class ReservaServiceImpl implements ReservaService{
 
     private void cambiarDisponibilidadHabitacionSegunEstadoReserva(Long idHabitacion, EstadoReserva estadoReserva){
         switch (estadoReserva){
-            case CONFIRMADA ->
+            case CONFIRMADA, EN_CURSO ->
                 actualizarDisponibilidadHabitacion(idHabitacion, EstadoHabitacion.OCUPADA);
-            case CANCELADA, FINALIZADA ->
+            case FINALIZADA ->
+                actualizarDisponibilidadHabitacion(idHabitacion, EstadoHabitacion.LIMPIEZA);
+            case CANCELADA ->
                 actualizarDisponibilidadHabitacion(idHabitacion, EstadoHabitacion.DISPONIBLE);
         }
     }

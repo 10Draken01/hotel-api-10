@@ -1,5 +1,7 @@
 package com.equipouno.reservas.enums;
 
+import com.equipouno.commons.exceptions.ConflictoException;
+import com.equipouno.commons.exceptions.DatoInvalidoException;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -41,7 +43,7 @@ public enum EstadoReserva {
 
     public abstract Set<EstadoReserva> puedeCambiar();
 
-    public boolean puedeCambiarA(EstadoReserva estadoReserva){
+    public boolean  puedeCambiarA(EstadoReserva estadoReserva){
         return puedeCambiar().contains(estadoReserva);
     }
 
@@ -51,7 +53,7 @@ public enum EstadoReserva {
                 return estado;
             }
         }
-        throw new IllegalArgumentException("Código de estado de reserva inválido: " + codigo);
+        throw new DatoInvalidoException("Código de estado de reserva inválido: " + codigo);
     }
 
 }
