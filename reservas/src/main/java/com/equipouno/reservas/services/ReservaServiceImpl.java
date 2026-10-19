@@ -4,7 +4,8 @@ import com.equipouno.commons.clients.HabitacionClient;
 import com.equipouno.commons.clients.HuespedClient;
 import com.equipouno.commons.dto.habitaciones.HabitacionResponse;
 import com.equipouno.commons.dto.huespedes.HuespedResponse;
-import com.equipouno.commons.dto.reservas.ReservaRequest;
+import com.equipouno.commons.dto.reservas.ReservaActualizarRequest;
+import com.equipouno.commons.dto.reservas.ReservaCrearRequest;
 import com.equipouno.commons.dto.reservas.ReservaResponse;
 import com.equipouno.commons.enums.EstadoHabitacion;
 import com.equipouno.commons.enums.EstadoRegistro;
@@ -16,7 +17,6 @@ import com.equipouno.reservas.enums.EstadoReserva;
 import com.equipouno.reservas.mapper.ReservaMapper;
 import com.equipouno.reservas.repositories.ReservaRepository;
 import com.equipouno.reservas.utils.ServiceUtils;
-import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -25,9 +25,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -120,7 +118,7 @@ public class ReservaServiceImpl implements ReservaService{
     }
 
     @Override
-    public ReservaResponse registrar(ReservaRequest request) {
+    public ReservaResponse registrar(ReservaCrearRequest request) {
         log.info("Registrando nueva reserva: {}", request);
 
         HuespedResponse huesped = obtenerHuesped(request.idHuesped());
@@ -128,15 +126,10 @@ public class ReservaServiceImpl implements ReservaService{
 
         BigDecimal precioNoche = habitacion.precio();
 
-        BigDecimal cantidadNoches = BigDecimal.valueOf(DateUtils.obtenerDiasEnRangoFechas(
-                request.fechaEntrada(),
-                request.fechaSalida()
-        ));
 
-        Reserva reserva = reservaMapper.requestAEntidad(
+        Reserva reserva = reservaMapper.reservaCrearRequestAEntidad(
                 request,
-                precioNoche,
-                cantidadNoches.multiply(precioNoche)
+                precioNoche
         );
 
         cambiarDisponibilidadHabitacionSegunEstadoReserva(
@@ -156,8 +149,21 @@ public class ReservaServiceImpl implements ReservaService{
     }
 
     @Override
-    public ReservaResponse actualizar(ReservaRequest request, Long id) {
-        return null;
+    public ReservaResponse actualizar(ReservaActualizarRequest request, Long id) {
+        log.info("Actualizando reserva con ID: {}", id);
+        Reserva reserva = obtenerReservaActiva(id);
+
+        // Ejecutar la actualización pasando los parámetros del DTO y los datos inmutables
+        // para que la entidad ejecute 'validarNoCambioRestoDeDatos' y responda 409 Conflict si difieren.
+        reserva.actualizar(
+                request.fechaEntrada(),
+                request.fechaSalida()
+        );
+
+        Reserva reservaGuardada = reservaRepository.save(reserva);
+        log.info("Reserva ID: {} actualizada exitosamente. Nuevo total: {}", id, reservaGuardada.getPrecioTotal());
+
+        return reservaMapper.entidadAResponse(reserva);
     }
 
     @Override

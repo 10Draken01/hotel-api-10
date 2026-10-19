@@ -19,7 +19,8 @@ public enum EstadoReserva {
     EN_CURSO(2L, "Check-in realizado", true, false) {
         @Override
         public Set<EstadoReserva> puedeCambiar() {
-            return Set.of(CANCELADA, FINALIZADA);
+            //Pequeño error, no puede pasar de EN_CURSO a CANCELADA, se borra CANCELADA
+            return Set.of(FINALIZADA);
         }
     },
     FINALIZADA(3L, "Check-out realizado", false, true) {

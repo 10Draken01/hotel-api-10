@@ -2,6 +2,7 @@ package com.equipouno.reservas.entities;
 
 import com.equipouno.commons.enums.EstadoRegistro;
 import com.equipouno.commons.exceptions.ConflictoException;
+import com.equipouno.commons.exceptions.DatoInvalidoException;
 import com.equipouno.commons.utils.DateUtils;
 import com.equipouno.commons.utils.ValoresNumericosUtils;
 import com.equipouno.reservas.enums.EstadoReserva;
@@ -54,14 +55,35 @@ public class Reserva {
     @Enumerated(EnumType.STRING)
     private EstadoRegistro estadoRegistro;
 
+    private static void validarFechasNoNulas(LocalDate fechaEntrada, LocalDate fechaSalida){
+        // Validar que la fecha de entrada y fin no sean nulas
+        DateUtils.validarFechaRequerida(
+                fechaEntrada,
+                "La fecha de entrada es requerida"
+        );
+        DateUtils.validarFechaRequerida(
+                fechaSalida,
+                "La fecha de salida es requerida"
+        );
+        // Validar que la fecha de entrada sea mayor o igual a la fecha actual
+        DateUtils.validarFechaMayorActual(
+                fechaEntrada,
+                "La fecha de entrada debe ser mayor o igual a la fecha actual"
+        );
+        // Validar que la fecha de entrada sea menor a la fecha de salida
+        DateUtils.validarFechaInicioMenorFin(
+                fechaEntrada,
+                fechaSalida,
+                "La fecha de entrada debe ser menor a la fecha de salida"
+        );
+    }
     private static void validarDatos(
             Long idHuesped,
             Long idHabitacion,
             LocalDate fechaEntrada,
             LocalDate fechaSalida,
             Integer numeroPersonas,
-            BigDecimal precioNoche,
-            BigDecimal precioTotal
+            BigDecimal precioNoche
     ){
         // Validar que el id del huesped sea positivo
         ValoresNumericosUtils.validarPositivo(
@@ -103,11 +125,6 @@ public class Reserva {
                 precioNoche,
                 "El precio por noche debe ser un valor positivo"
         );
-        // Validar que el precio total sea positivo
-        ValoresNumericosUtils.validarPositivo(
-                precioTotal,
-                "El precio total debe ser un valor positivo"
-        );
     }
 
     private void validarNoEliminado(){
@@ -119,7 +136,7 @@ public class Reserva {
         validarNoEliminado();
         if(
                 this.estadoReserva.equals(EstadoReserva.CONFIRMADA) ||
-                this.estadoReserva.equals(EstadoReserva.EN_CURSO)
+                        this.estadoReserva.equals(EstadoReserva.EN_CURSO)
         )
             throw new ConflictoException(
                     "La reserva con id: " + id + " no puede ser eliminada porque se encuentra en estado: " + this.estadoReserva.getDescripcion()
@@ -149,33 +166,77 @@ public class Reserva {
     }
 
     public void actualizar(
-            Long idHuesped,
-            Long idHabitacion,
             LocalDate fechaEntrada,
-            LocalDate fechaSalida,
-            Integer numeroPersonas,
-            BigDecimal precioNoche,
-            BigDecimal precioTotal,
-            EstadoReserva estadoReserva
+            LocalDate fechaSalida
     ){
         validarNoEliminado();
-        validarDatos(
-                idHuesped,
-                idHabitacion,
-                fechaEntrada,
-                fechaSalida,
-                numeroPersonas,
-                precioNoche,
-                precioTotal
-        );
-        cambiarEstadoReserva(estadoReserva);
-        this.idHuesped = idHuesped;
-        this.idHabitacion = idHabitacion;
-        this.fechaEntrada = fechaEntrada;
-        this.fechaSalida = fechaSalida;
-        this.numeroPersonas = numeroPersonas;
-        this.precioNoche = precioNoche;
-        this.precioTotal = precioTotal;
+        validarFechasNoNulas(fechaEntrada, fechaSalida);
+        //Comento el metodo, no se elimina por si hay que validarlo en otro moemtno
+        //validarNoCambioRestoDeDatos(idHuesped, idHabitacion, numeroPersonas, precioNoche, precioTotal);
+        switch (this.estadoReserva) {
+            case CONFIRMADA -> {
+                actualizarPorEstadoConfirmada(fechaEntrada, fechaSalida);
+                recalcularPrecioTotal();
+            }
+            case EN_CURSO -> {
+                actualizarPorEstadoEnCurso(fechaEntrada, fechaSalida);
+                recalcularPrecioTotal();
+            }
+            default ->
+                throw new ConflictoException("No se puede modificar una reserva en estado " + this.estadoReserva); // -> 409 Conflict
+        }
+    }
+
+    public void actualizarPorEstadoConfirmada(
+            LocalDate nuevaFechaEntrada,
+            LocalDate nuevaFechaSalida
+    ){
+        if (!nuevaFechaEntrada.isBefore(nuevaFechaSalida)) {
+            throw new ConflictoException("La fecha de entrada debe ser estrictamente anterior a la fecha de salida"); // -> 409 Conflict
+        }
+        this.fechaEntrada = nuevaFechaEntrada;
+        this.fechaSalida = nuevaFechaSalida;
+    }
+
+    public void actualizarPorEstadoEnCurso(
+            LocalDate nuevaFechaEntrada,
+            LocalDate nuevaFechaSalida
+    ){
+        if (!this.fechaEntrada.equals(nuevaFechaEntrada)) {
+            throw new ConflictoException("No se permite modificar la fecha de entrada de una reserva que ya está en curso"); // -> 409 Conflict
+        }
+        if (!this.fechaEntrada.isBefore(nuevaFechaSalida)) {
+            throw new ConflictoException("La nueva fecha de salida debe ser posterior a la fecha de entrada original"); // -> 409 Conflict
+        }
+        this.fechaSalida = nuevaFechaSalida;
+    }
+
+    public void recalcularPrecioTotal() {
+        long noches = DateUtils.obtenerDiasEnRangoFechas(fechaEntrada, fechaSalida);
+        this.precioTotal = this.precioNoche.multiply(BigDecimal.valueOf(noches));
+    }
+
+    private void validarNoCambioRestoDeDatos(
+            Long idHuespedRecibido,
+            Long idHabitacionRecibido,
+            Integer numeroPersonasRecibido,
+            BigDecimal precioNocheRecibido,
+            BigDecimal precioTotalRecibido
+    ){
+        if (!this.idHuesped.equals(idHuespedRecibido))
+            throw new ConflictoException("No está permitido cambiar al huésped de una reserva existente"); // -> 409 Conflict
+
+        if (!this.idHabitacion.equals(idHabitacionRecibido))
+            throw new ConflictoException("No está permitido cambiar la habitacion de una reserva existente"); // -> 409 Conflict
+
+        if (!this.numeroPersonas.equals(numeroPersonasRecibido))
+            throw new ConflictoException("No está permitido cambiar el numero de personas de una reserva existente"); // -> 409 Conflict
+
+        if (!this.precioNoche.equals(precioNocheRecibido))
+            throw new ConflictoException("No está permitido cambiar el precio de la noche de una reserva existente"); // -> 409 Conflict
+
+        if (!this.precioTotal.equals(precioTotalRecibido))
+            throw new ConflictoException("No está permitido cambiar el precio total de una reserva existente"); // -> 409 Conflict
     }
 
     public static Reserva crear(
@@ -184,8 +245,7 @@ public class Reserva {
             LocalDate fechaEntrada,
             LocalDate fechaSalida,
             Integer numeroPersonas,
-            BigDecimal precioNoche,
-            BigDecimal precioTotal
+            BigDecimal precioNoche
     ){
         validarDatos(
                 idHuesped,
@@ -193,19 +253,19 @@ public class Reserva {
                 fechaEntrada,
                 fechaSalida,
                 numeroPersonas,
-                precioNoche,
-                precioTotal
+                precioNoche
         );
-        return Reserva.builder()
+        Reserva reserva = Reserva.builder()
                 .idHuesped(idHuesped)
                 .idHabitacion(idHabitacion)
                 .fechaEntrada(fechaEntrada)
                 .fechaSalida(fechaSalida)
                 .numeroPersonas(numeroPersonas)
                 .precioNoche(precioNoche)
-                .precioTotal(precioTotal)
                 .estadoReserva(EstadoReserva.CONFIRMADA)
                 .estadoRegistro(EstadoRegistro.ACTIVO)
                 .build();
+        reserva.recalcularPrecioTotal();
+        return reserva;
     }
 }

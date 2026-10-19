@@ -2,7 +2,7 @@ package com.equipouno.reservas.controller;
 
 import com.equipouno.commons.controller.CrudController;
 import com.equipouno.commons.docs.ProblemaDoc;
-import com.equipouno.commons.dto.reservas.ReservaRequest;
+import com.equipouno.commons.dto.reservas.ReservaCrearRequest;
 import com.equipouno.commons.dto.reservas.ReservaResponse;
 import com.equipouno.reservas.services.ReservaService;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -22,7 +22,7 @@ import java.util.List;
 
 @RestController
 @Tag(name = "Reservas", description = "Operaciones relacionadas con las reservas")
-public class ReservaController extends CrudController<ReservaRequest, ReservaResponse, ReservaService> {
+public class ReservaController extends CrudController<ReservaCrearRequest, ReservaResponse, ReservaService> {
 
     public ReservaController(ReservaService service) {
         super(service);

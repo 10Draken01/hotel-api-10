@@ -4,7 +4,7 @@ import com.equipouno.commons.dto.datos.DatosHabitacion;
 import com.equipouno.commons.dto.datos.DatosHuesped;
 import com.equipouno.commons.dto.habitaciones.HabitacionResponse;
 import com.equipouno.commons.dto.huespedes.HuespedResponse;
-import com.equipouno.commons.dto.reservas.ReservaRequest;
+import com.equipouno.commons.dto.reservas.ReservaCrearRequest;
 import com.equipouno.commons.dto.reservas.ReservaResponse;
 import com.equipouno.commons.mapper.CommonMapper;
 import com.equipouno.commons.utils.DateUtils;
@@ -14,9 +14,9 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 
 @Component
-public class ReservaMapper implements CommonMapper<ReservaRequest, ReservaResponse, Reserva> {
+public class ReservaMapper implements CommonMapper<ReservaCrearRequest, ReservaResponse, Reserva> {
     @Override
-    public Reserva requestAEntidad(ReservaRequest request) {
+    public Reserva requestAEntidad(ReservaCrearRequest request) {
         return request == null ? null
                 : Reserva.crear(
                 request.idHuesped(),
@@ -24,11 +24,10 @@ public class ReservaMapper implements CommonMapper<ReservaRequest, ReservaRespon
                 request.fechaEntrada(),
                 request.fechaSalida(),
                 request.numeroPersonas(),
-                null,
                 null
         );
     }
-    public Reserva requestAEntidad(ReservaRequest request, BigDecimal precioNoche, BigDecimal precioTotal) {
+    public Reserva reservaCrearRequestAEntidad(ReservaCrearRequest request, BigDecimal precioNoche) {
         return request == null ? null
                 : Reserva.crear(
                 request.idHuesped(),
@@ -36,8 +35,7 @@ public class ReservaMapper implements CommonMapper<ReservaRequest, ReservaRespon
                 request.fechaEntrada(),
                 request.fechaSalida(),
                 request.numeroPersonas(),
-                precioNoche,
-                precioTotal
+                precioNoche
         );
     }
 

@@ -4,11 +4,10 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 
-@Schema(name = "ReservaRequest", description = "Representa la solicitud para crear o actualizar una reserva.")
-public record ReservaRequest(
+@Schema(name = "ReservaRequest", description = "Representa la solicitud para crear una reserva.")
+public record ReservaCrearRequest(
         @Schema(description = "Identificador del huésped asociado a la reserva", example = "1")
         @NotNull(message = "El id del huésped es requerido")
         @Positive(message = "El id del huésped debe ser un número positivo")
