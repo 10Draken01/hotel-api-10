@@ -1,12 +1,12 @@
 package com.equipouno.habitaciones.service;
 
+import com.equipouno.commons.enums.EstadoHabitacion;
 import com.equipouno.commons.enums.EstadoRegistro;
 import com.equipouno.commons.exceptions.DatoInvalidoException;
 import com.equipouno.commons.exceptions.RecursoNoEncontradoException;
 import com.equipouno.commons.dto.habitaciones.HabitacionRequest;
 import com.equipouno.commons.dto.habitaciones.HabitacionResponse;
 import com.equipouno.habitaciones.entity.Habitacion;
-import com.equipouno.habitaciones.enums.Estado;
 import com.equipouno.habitaciones.enums.Tipo;
 import com.equipouno.habitaciones.mapper.HabitacionMapper;
 import com.equipouno.habitaciones.repository.HabitacionRepository;
@@ -34,6 +34,12 @@ public class HabitacionServiceImpl implements HabitacionService {
         ));
     }
 
+    @Override
+    public HabitacionResponse obtenerHabitacionPorIdDisponible(Long id) {
+        log.info("Buscando habitacion disponible con id {}", id);
+        return habitacionMapper.entidadAResponse(obtenerHabitacionDisponiblePorId(id));
+    }
+
     //PATCH /{id}/estado/{idEstado} - actualizar manualmente el estado de la habitacion
     @Override
     public void actualizarEstadoHabitacionManualmente(Long idHabitacion, Long idNuevoEstado) {
@@ -41,15 +47,15 @@ public class HabitacionServiceImpl implements HabitacionService {
         log.info("Actualizando estado de la habitacion con id {}", idHabitacion);
 
         // Obtengo el enum por código (si falla, lanza DatoInvalidoException -> 400)
-        Estado nuevoEstado = Estado.obtenerPorCodigo(idNuevoEstado);
-        Estado viejoEstado = habitacion.getEstado();
+        EstadoHabitacion nuevoEstadoHabitacion = EstadoHabitacion.obtenerPorCodigo(idNuevoEstado);
+        EstadoHabitacion viejoEstadoHabitacion = habitacion.getEstadoHabitacion();
 
         // La entidad ejecuta y valida la regla con sus propios métodos (si falla, lanza ConflictoException -> 409)
-        habitacion.actualizarEstadoManualmente(nuevoEstado);
+        habitacion.actualizarEstadoManualmente(nuevoEstadoHabitacion);
 
         habitacionRepository.save(habitacion);
 
-        log.info("Estado de habitacion con id {} cambio de {} a {}", idHabitacion, viejoEstado, nuevoEstado);
+        log.info("Estado de habitacion con id {} cambio de {} a {}", idHabitacion, viejoEstadoHabitacion, nuevoEstadoHabitacion);
     }
 
     @Override
@@ -131,5 +137,12 @@ public class HabitacionServiceImpl implements HabitacionService {
         log.info("Validando cambio en el numero de habitacion único");
         if(habitacionRepository.existsByNumeroAndEstadoRegistroAndIdNot(request.numero(), EstadoRegistro.ACTIVO, id))
             throw new DatoInvalidoException("Ya existe una habitacion con ese numero");
+    }
+
+    private Habitacion obtenerHabitacionDisponiblePorId(Long id){
+        log.info("Obteniendo habitacion disponible por id {}", id);
+        return habitacionRepository.findByIdAndEstadoRegistroAndEstado(id, EstadoRegistro.ACTIVO, EstadoHabitacion.DISPONIBLE)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Habitacion disponible no encontrada con id: " + id));
     }
 }

@@ -1,7 +1,5 @@
-package com.equipouno.habitaciones.enums;
+package com.equipouno.commons.enums;
 
-import com.equipouno.commons.exceptions.ConflictoException;
-import com.equipouno.commons.exceptions.RecursoNoEncontradoException;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -11,43 +9,43 @@ import java.util.Set;
 
 @Getter
 @RequiredArgsConstructor
-public enum Estado {
+public enum EstadoHabitacion {
     DISPONIBLE(1L, "Lista para asignarse") {
         @Override
-        public Set<Estado> transicionesManualesPermitidas() {
+        public Set<EstadoHabitacion> transicionesManualesPermitidas() {
             return EnumSet.of(LIMPIEZA, MANTENIMIENTO);
         }
     },
     OCUPADA(2L, "Asignada a una reserva vigente") {
         @Override
-        public Set<Estado> transicionesManualesPermitidas() {
+        public Set<EstadoHabitacion> transicionesManualesPermitidas() {
             // Desde OCUPADA nadie puede cambiarla manualmente (retorna vacío)
-            return EnumSet.noneOf(Estado.class);
+            return EnumSet.noneOf(EstadoHabitacion.class);
         }
     },
     LIMPIEZA(3L, "En proceso de limpieza tras check-out") {
         @Override
-        public Set<Estado> transicionesManualesPermitidas() {
+        public Set<EstadoHabitacion> transicionesManualesPermitidas() {
             return EnumSet.of(DISPONIBLE, MANTENIMIENTO);
         }
     },
     MANTENIMIENTO(4L, "En reparación") {
         @Override
-        public Set<Estado> transicionesManualesPermitidas() {
+        public Set<EstadoHabitacion> transicionesManualesPermitidas() {
             return EnumSet.of(DISPONIBLE, LIMPIEZA);
         }
     };
 
     private final Long codigo;
     private final String descripcion;
-    public abstract Set<Estado> transicionesManualesPermitidas();
+    public abstract Set<EstadoHabitacion> transicionesManualesPermitidas();
 
-    public boolean puedeCambiarManualmenteA(Estado nuevoEstado) {
-        return transicionesManualesPermitidas().contains(nuevoEstado);
+    public boolean puedeCambiarManualmenteA(EstadoHabitacion nuevoEstadoHabitacion) {
+        return transicionesManualesPermitidas().contains(nuevoEstadoHabitacion);
     }
 
-    public static Estado obtenerPorCodigo(Long codigo) {
-        for (Estado e : values()) {
+    public static EstadoHabitacion obtenerPorCodigo(Long codigo) {
+        for (EstadoHabitacion e : values()) {
             if (Objects.equals(e.codigo, codigo)) {
                 return e;
             }

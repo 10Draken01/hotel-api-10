@@ -5,6 +5,8 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
+import java.math.BigDecimal;
+
 @Schema(description = "Datos para registrar una habitaciónn")
 public record HabitacionRequest(
     @Schema(description = "Numero de habitación", example = "505")
@@ -20,7 +22,7 @@ public record HabitacionRequest(
     @Schema(description = "Precio de la habitación", example = "750.2")
     @NotNull(message = "El precio es requerido")
     @Positive(message = "El precio debe ser mayor a 0")
-    Double precio,
+    BigDecimal precio,
 
     @Schema(description = "Capacidad de la habitación", example = "2")
     @NotNull(message = "La capacidad es requerida")

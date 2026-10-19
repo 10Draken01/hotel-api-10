@@ -15,6 +15,8 @@ public interface HabitacionService extends CrudService<HabitacionRequest, Habita
 
     HabitacionResponse obtenerHabitacionPorIdSinEstado(Long id);
 
+    HabitacionResponse obtenerHabitacionPorIdDisponible(Long id);
+
     //Este tiene que ser un patch de ahuevo
     void actualizarEstadoHabitacionManualmente(Long idHabitacion, Long idNuevoEstado);
 }

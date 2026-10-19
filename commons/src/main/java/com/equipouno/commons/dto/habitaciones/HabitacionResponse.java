@@ -2,6 +2,8 @@ package com.equipouno.commons.dto.habitaciones;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.math.BigDecimal;
+
 public record HabitacionResponse(
     @Schema(description = "Identificador de la habitación", example = "2")
     Long id,
@@ -13,7 +15,7 @@ public record HabitacionResponse(
     String tipo,
 
     @Schema(description = "Precio de la habitación", example = "750.2")
-    Double precio,
+    BigDecimal precio,
 
     @Schema(description = "Capacidad de la habitación", example = "2")
     Integer capacidad,

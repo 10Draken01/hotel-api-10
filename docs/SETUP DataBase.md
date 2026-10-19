@@ -86,7 +86,7 @@ Ejecuta estos pasos:
 El script crea las siguientes tablas:
 
 -   **`HUESPED`**: información personal y documental de los huéspedes.
--   **`HABITACION`**: número, tipo, precio, capacidad y estado de las
+-   **`HABITACION`**: número, tipo, precio, capacidad y estadoHabitacion de las
     habitaciones.
 -   **`RESERVA`**: fechas de estancia, huésped, habitación, número de
     personas y precios de la reserva.
