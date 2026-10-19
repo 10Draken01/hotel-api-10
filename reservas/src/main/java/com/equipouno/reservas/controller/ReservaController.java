@@ -48,6 +48,16 @@ public class ReservaController extends CrudController<ReservaRequest, ReservaRes
         return service.listarReservasAgrupadasEstadoReservaSinEstado(codigoEstadoReserva, pageable);
     }
 
+    @GetMapping("/interno/huesped-no-tiene-reserva/{idHuesped}")
+    @ApiResponse(
+            responseCode = "200",
+            description = "Verifica si el huésped no tiene reservas activas"
+    )
+    public ResponseEntity<Void> huespedNoTieneReservaActiva(@PathVariable @Positive Long idHuesped) {
+        service.huespedNoTieneReservaActiva(idHuesped);
+        return ResponseEntity.noContent().build();
+    }
+
     @PatchMapping("/{idReserva}/estado/{idEstado}")
     @ApiResponse(
             responseCode = "200",

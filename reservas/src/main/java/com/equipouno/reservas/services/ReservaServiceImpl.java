@@ -8,6 +8,7 @@ import com.equipouno.commons.dto.reservas.ReservaRequest;
 import com.equipouno.commons.dto.reservas.ReservaResponse;
 import com.equipouno.commons.enums.EstadoHabitacion;
 import com.equipouno.commons.enums.EstadoRegistro;
+import com.equipouno.commons.exceptions.ConflictoException;
 import com.equipouno.commons.exceptions.RecursoNoEncontradoException;
 import com.equipouno.commons.utils.DateUtils;
 import com.equipouno.reservas.entities.Reserva;
@@ -67,6 +68,29 @@ public class ReservaServiceImpl implements ReservaService{
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public void huespedNoTieneReservaActiva(Long id) {
+        if(reservaRepository.existsByIdHuespedAndEstadoReservaAndEstadoRegistro(
+                id,
+                EstadoReserva.CONFIRMADA,
+                EstadoRegistro.ACTIVO
+        ))
+            throw new ConflictoException(
+                    String.format("El huesped con id %d tiene reservas confirmadas", id)
+            );
+        if(reservaRepository.existsByIdHuespedAndEstadoReservaAndEstadoRegistro(
+                id,
+                EstadoReserva.EN_CURSO,
+                EstadoRegistro.ACTIVO
+        ))
+            throw new ConflictoException(
+                    String.format("El huesped con id %d tiene reservas en curso", id)
+            );
+    }
+
+
+    @Override
+    @Transactional(readOnly = true)
     public Page<ReservaResponse> listarReservasAgrupadasEstadoReservaSinEstado(Long codigoEstadoReserva, Pageable pageable) {
         log.info("Listando reservas agrupadas por estado de reserva sin estado: {}", codigoEstadoReserva);
 

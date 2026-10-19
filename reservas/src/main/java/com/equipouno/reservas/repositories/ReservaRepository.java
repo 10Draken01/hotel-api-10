@@ -26,6 +26,12 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
             Pageable pageable
     );
 
+    boolean existsByIdHuespedAndEstadoReservaAndEstadoRegistro(
+            Long idHuesped,
+            EstadoReserva estadoReserva,
+            EstadoRegistro estadoRegistro
+    );
+
     // Para verificar si existe un traslape de fechas para una reserva en una habitacion específica,
     // excluyendo una reserva específica (por ejemplo, al actualizar una reserva existente).
     @Query("""
