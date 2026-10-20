@@ -1,5 +1,6 @@
 package com.equipouno.habitaciones.service;
 
+import com.equipouno.commons.enums.EventoReserva;
 import com.equipouno.commons.services.CrudService;
 import com.equipouno.commons.dto.habitaciones.HabitacionRequest;
 import com.equipouno.commons.dto.habitaciones.HabitacionResponse;
@@ -19,4 +20,7 @@ public interface HabitacionService extends CrudService<HabitacionRequest, Habita
 
     //Este tiene que ser un patch de ahuevo
     void actualizarEstadoHabitacionManualmente(Long idHabitacion, Long idNuevoEstado);
+
+    //Metodos de gestion de habitaciones desde reservas
+    void aplicarEventoReserva(Long idHabitacion, EventoReserva eventoReserva);
 }

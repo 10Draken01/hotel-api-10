@@ -66,28 +66,31 @@ public class Habitacion {
         this.estadoRegistro = EstadoRegistro.ELIMINADO;
     }
 
-    public void actualizarEstadoManualmente(EstadoHabitacion nuevoEstadoHabitacion) {
-        if (nuevoEstadoHabitacion == null) {
-            throw new DatoInvalidoException("El nuevo estado es requerido"); // -> 400 Bad Request
+    public void actualizarEstadoManualmente(EstadoHabitacion nuevo) {
+        if (nuevo == null) {
+            throw new DatoInvalidoException("El nuevo estado es requerido");
         }
-        if (nuevoEstadoHabitacion == this.estadoHabitacion) {
-            throw new ConflictoException("La habitación ya se encuentra en el estado " + nuevoEstadoHabitacion); // -> 409 Conflict
+        if (nuevo == this.estadoHabitacion) {
+            throw new ConflictoException("La habitación ya se encuentra en el estado " + nuevo);
         }
-        if (nuevoEstadoHabitacion == EstadoHabitacion.OCUPADA) {
-            throw new ConflictoException("No se puede cambiar manualmente el estado a OCUPADA"); // -> 409 Conflict
+        if (!this.estadoHabitacion.puedeCambiarManualmenteA(nuevo)) {
+            throw new ConflictoException(String.format(
+                    "No se permite cambiar manualmente de %s a %s", this.estadoHabitacion, nuevo));
         }
-        if (this.estadoHabitacion == EstadoHabitacion.OCUPADA) {
-            throw new ConflictoException("Una habitación OCUPADA no se puede cambiar de estado manualmente"); // -> 409 Conflict
-        }
+        this.estadoHabitacion = nuevo;
+    }
 
-        //Metodo del enum (tovia tengo dudas en si dejarlo asi XD)
-        if (!this.estadoHabitacion.puedeCambiarManualmenteA(nuevoEstadoHabitacion)) {
-            throw new ConflictoException(
-                    String.format("No se permite cambiar manualmente de %s a %s", this.estadoHabitacion, nuevoEstadoHabitacion)
-            ); // -> 409 Conflict
-        }
+    // Eventos del ciclo de vida de la reserva
+    public void ocuparPorReserva()          { cambiarPorReserva(EstadoHabitacion.OCUPADA); }
+    public void liberarPorCheckOut()        { cambiarPorReserva(EstadoHabitacion.LIMPIEZA); }
+    public void liberarPorCancelacion()     { cambiarPorReserva(EstadoHabitacion.DISPONIBLE); }
 
-        this.estadoHabitacion = nuevoEstadoHabitacion;
+    private void cambiarPorReserva(EstadoHabitacion nuevo) {
+        if (!this.estadoHabitacion.puedeCambiarPorReservaA(nuevo)) {
+            throw new ConflictoException(String.format(
+                    "La reserva no puede cambiar la habitación de %s a %s", this.estadoHabitacion, nuevo));
+        }
+        this.estadoHabitacion = nuevo;
     }
 
     public void actualizar(Integer numero, BigDecimal precio, Integer capacidad, Tipo tipo){

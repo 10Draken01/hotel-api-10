@@ -18,10 +18,10 @@ public record ReservaResponse(
         @Schema(description = "Identificador de la habitación asociada a la reserva", example = "101")
         DatosHabitacion habitacion,
 
-        @Schema(description = "Fecha de entrada de la reserva", example = "2024-06-01")
+        @Schema(description = "Fecha de entrada de la reserva", example = "2026-11-11")
         String fechaEntrada,
 
-        @Schema(description = "Fecha de salida de la reserva", example = "2024-06-05")
+        @Schema(description = "Fecha de salida de la reserva", example = "2026-11-14")
         String fechaSalida,
 
         @Schema(description = "Número de personas para la reserva", example = "2")

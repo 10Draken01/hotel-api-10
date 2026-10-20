@@ -6,7 +6,7 @@ import jakarta.validation.constraints.*;
 
 import java.time.LocalDate;
 
-@Schema(name = "ReservaRequest", description = "Representa la solicitud para crear una reserva.")
+@Schema(name = "ReservaCrearRequest", description = "Representa la solicitud para crear una reserva.")
 public record ReservaCrearRequest(
         @Schema(description = "Identificador del huésped asociado a la reserva", example = "1")
         @NotNull(message = "El id del huésped es requerido")
@@ -18,13 +18,13 @@ public record ReservaCrearRequest(
         @Positive(message = "El id de la habitación debe ser un número positivo")
         Long idHabitacion,
 
-        @Schema(description = "Fecha de entrada de la reserva", example = "2024-06-01")
+        @Schema(description = "Fecha de entrada de la reserva", example = "2026-11-11")
         @NotNull(message = "La fecha de entrada es requerida")
         @FutureOrPresent(message = "La fecha de entrada debe ser hoy o en el futuro")
         @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
         LocalDate fechaEntrada,
 
-        @Schema(description = "Fecha de salida de la reserva", example = "2024-06-05")
+        @Schema(description = "Fecha de salida de la reserva", example = "2026-11-14")
         @NotNull(message = "La fecha de salida es requerida")
         @FutureOrPresent(message = "La fecha de salida debe ser hoy o en el futuro")
         @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")

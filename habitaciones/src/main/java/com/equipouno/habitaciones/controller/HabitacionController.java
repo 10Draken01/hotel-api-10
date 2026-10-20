@@ -4,6 +4,7 @@ import com.equipouno.commons.controller.CrudController;
 import com.equipouno.commons.docs.ProblemaDoc;
 import com.equipouno.commons.dto.habitaciones.HabitacionRequest;
 import com.equipouno.commons.dto.habitaciones.HabitacionResponse;
+import com.equipouno.commons.enums.EventoReserva;
 import com.equipouno.habitaciones.service.HabitacionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -85,17 +86,16 @@ public class HabitacionController extends CrudController<HabitacionRequest, Habi
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping("/interno/{id}/estado/{idEstado}")
-    @Operation(summary = "Actualizar estado de habitacion manualmente desde otro microservicio")
+    @PutMapping("/interno/{id}/eventos-reserva")
+    @Operation(summary = "Actualizar estado de habitacion desde otro microservicio")
     @ApiResponse(responseCode = "204", description = "Estado de la habitacion actualizada")
     @ApiResponse(responseCode = "409", description = "El estado de la habitacion no puede actualizarse por regla de negocio",
             content = @Content(mediaType = "application/problem+json",
                     schema = @Schema(implementation = ProblemaDoc.class)))
-    ResponseEntity<Void> actualizarEstadoHabitacionManualmenteInterno(
-            @PathVariable @Positive(message = "El id de la habitacion debe ser positivo") Long id,
-            @PathVariable @Positive(message = "El idEstado debe ser positivo") Long idEstado
-    ){
-        service.actualizarEstadoHabitacionManualmente(id, idEstado);
+    public ResponseEntity<Void> aplicarEventoReserva(
+            @PathVariable Long id,
+            @RequestParam EventoReserva evento) {
+        service.aplicarEventoReserva(id, evento);
         return ResponseEntity.noContent().build();
     }
 }

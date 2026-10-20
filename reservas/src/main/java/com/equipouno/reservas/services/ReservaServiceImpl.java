@@ -9,9 +9,10 @@ import com.equipouno.commons.dto.reservas.ReservaCrearRequest;
 import com.equipouno.commons.dto.reservas.ReservaResponse;
 import com.equipouno.commons.enums.EstadoHabitacion;
 import com.equipouno.commons.enums.EstadoRegistro;
+import com.equipouno.commons.enums.EventoReserva;
 import com.equipouno.commons.exceptions.ConflictoException;
 import com.equipouno.commons.exceptions.RecursoNoEncontradoException;
-import com.equipouno.commons.utils.DateUtils;
+import com.equipouno.commons.dto.reservas.ReservaActivaResponse;
 import com.equipouno.reservas.entities.Reserva;
 import com.equipouno.reservas.enums.EstadoReserva;
 import com.equipouno.reservas.mapper.ReservaMapper;
@@ -87,6 +88,28 @@ public class ReservaServiceImpl implements ReservaService{
     }
 
 
+    private final List<EstadoReserva> RESERVAS_ACTIVAS = List.of(
+            EstadoReserva.CONFIRMADA,
+            EstadoReserva.EN_CURSO
+    );
+
+    @Override
+    @Transactional(readOnly = true)
+    public ReservaActivaResponse obtenerReservaActivaPorHabitacion(Long idHabitacion) {
+        return reservaRepository.findByIdHabitacionAndEstadoRegistroAndEstadoReservaIn(
+                        idHabitacion,
+                        EstadoRegistro.ACTIVO,
+                        List.of(EstadoReserva.CONFIRMADA, EstadoReserva.EN_CURSO)
+                )
+                .map(reserva -> new ReservaActivaResponse(
+                        reserva.getId(),
+                        reserva.getIdHabitacion(),
+                        reserva.getNumeroPersonas()
+                ))
+                .orElse(null); // Retorna null si no hay reserva activa (o se maneja con ResponseEntity en el controller)
+    }
+
+
     @Override
     @Transactional(readOnly = true)
     public Page<ReservaResponse> listarReservasAgrupadasEstadoReservaSinEstado(Long codigoEstadoReserva, Pageable pageable) {
@@ -94,7 +117,7 @@ public class ReservaServiceImpl implements ReservaService{
 
         EstadoReserva estadoReserva = EstadoReserva.obtenerPorCodigo(codigoEstadoReserva);
 
-        return reservaRepository.findByEstadoReservaWithPage(estadoReserva, pageable)
+        return reservaRepository.findByEstadoReserva(estadoReserva, pageable)
                 .map(r ->
                         reservaMapper.entidadAResponse(
                                 r,
@@ -132,12 +155,12 @@ public class ReservaServiceImpl implements ReservaService{
                 precioNoche
         );
 
-        cambiarDisponibilidadHabitacionSegunEstadoReserva(
-                reserva.getIdHabitacion(),
-                reserva.getEstadoReserva()
-        );
-
+        // 1) Primero se valida contra la BD local (constraints, etc.). Aún no hay commit.
         reservaRepository.saveAndFlush(reserva);
+
+        // 2) Último paso con efecto externo. Si habitaciones responde 409 (no estaba DISPONIBLE),
+        //    la excepción propaga y la transacción local hace rollback de la reserva.
+        notificarHabitacion(reserva.getIdHabitacion(), EventoReserva.RESERVA_CREADA);
 
         log.info("Reserva registrada con id: {}", reserva.getId());
 
@@ -173,14 +196,14 @@ public class ReservaServiceImpl implements ReservaService{
         EstadoReserva nuevoEstadoReserva = EstadoReserva.obtenerPorCodigo(codigoEstadoReserva);
         EstadoReserva estadoReservaAnterior = reserva.getEstadoReserva();
 
+        // Valida la transición (409 si no es válida) y la aplica en memoria
         reserva.cambiarEstadoReserva(nuevoEstadoReserva);
 
-        cambiarDisponibilidadHabitacionSegunEstadoReserva(
-                reserva.getIdHabitacion(),
-                nuevoEstadoReserva
-        );
-
         reservaRepository.saveAndFlush(reserva);
+
+        // Último paso con efecto externo (si habitaciones rechaza, se hace rollback local)
+        sincronizarHabitacionTrasCambioDeEstado(reserva.getIdHabitacion(), nuevoEstadoReserva);
+
         log.info("Estado de la reserva con id {} actualizado de {} a {}", idReserva, estadoReservaAnterior, nuevoEstadoReserva);
     }
 
@@ -192,10 +215,8 @@ public class ReservaServiceImpl implements ReservaService{
         // esto valida que el estado de la reserva sea o FINALIZADA o CANCELADA, si no lo es lanza una excepcion
         reserva.eliminar();
 
-        cambiarDisponibilidadHabitacionSegunEstadoReserva(
-                reserva.getIdHabitacion(),
-                reserva.getEstadoReserva()
-        );
+        // No se notifica a habitaciones: el efecto sobre la habitación ya ocurrió en el check-out
+        // o la cancelación, y la habitación pudo haber sido reservada por otra reserva desde entonces.
 
         reservaRepository.saveAndFlush(reserva);
         log.info("Reserva con id {} eliminada", id);
@@ -264,23 +285,29 @@ public class ReservaServiceImpl implements ReservaService{
 //        }
 //    }
 
-    private void actualizarDisponibilidadHabitacion(Long idHabitacion, EstadoHabitacion estadoHabitacion){
-        log.info("Actualizando disponibilidad de la habitacion con id {} a estado {}", idHabitacion, estadoHabitacion);
-        habitacionClient.actualizarEstadoHabitacionManualmenteInterno(
-                idHabitacion,
-                estadoHabitacion.getCodigo()
-        );
-        log.info("Disponibilidad de la habitacion con id {} actualizada a estado {}", idHabitacion, estadoHabitacion);
+    /**
+     * Reservas informa QUÉ pasó (evento); habitaciones decide QUÉ estado le corresponde.
+     */
+    private void notificarHabitacion(Long idHabitacion, EventoReserva evento) {
+        log.info("Notificando a habitaciones el evento {} para la habitacion con id {}", evento, idHabitacion);
+        habitacionClient.aplicarEventoReserva(idHabitacion, evento);
+        log.info("Habitacion con id {} proceso el evento {}", idHabitacion, evento);
     }
 
-    private void cambiarDisponibilidadHabitacionSegunEstadoReserva(Long idHabitacion, EstadoReserva estadoReserva){
-        switch (estadoReserva){
-            case CONFIRMADA, EN_CURSO ->
-                actualizarDisponibilidadHabitacion(idHabitacion, EstadoHabitacion.OCUPADA);
-            case FINALIZADA ->
-                actualizarDisponibilidadHabitacion(idHabitacion, EstadoHabitacion.LIMPIEZA);
-            case CANCELADA ->
-                actualizarDisponibilidadHabitacion(idHabitacion, EstadoHabitacion.DISPONIBLE);
+    /**
+     * Traduce el NUEVO estado de la reserva al evento que debe conocer habitaciones.
+     * - CONFIRMADA: solo existe al crear (lo cubre registrar); ninguna transición llega aquí.
+     * - EN_CURSO (check-in): la habitación sigue OCUPADA, no hay nada que notificar.
+     * - FINALIZADA (check-out): OCUPADA -> LIMPIEZA.
+     * - CANCELADA: OCUPADA -> DISPONIBLE.
+     */
+    private void sincronizarHabitacionTrasCambioDeEstado(Long idHabitacion, EstadoReserva nuevoEstado) {
+        switch (nuevoEstado) {
+            case EN_CURSO -> log.info("Check-in: la habitacion {} permanece OCUPADA, sin notificar", idHabitacion);
+            case FINALIZADA -> notificarHabitacion(idHabitacion, EventoReserva.CHECK_OUT);
+            case CANCELADA -> notificarHabitacion(idHabitacion, EventoReserva.CANCELACION);
+            case CONFIRMADA -> throw new IllegalStateException(
+                    "Una reserva no puede volver a CONFIRMADA; la transicion debio ser rechazada por la entidad");
         }
     }
 }

@@ -2,6 +2,7 @@ package com.equipouno.commons.clients;
 
 import com.equipouno.commons.docs.ProblemaDoc;
 import com.equipouno.commons.dto.habitaciones.HabitacionResponse;
+import com.equipouno.commons.enums.EventoReserva;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -12,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @FeignClient(name = "habitaciones")
 public interface HabitacionClient {
@@ -26,9 +28,9 @@ public interface HabitacionClient {
             @PathVariable Long id
     );
 
-    @PutMapping("/interno/{id}/estado/{idEstado}")
-    ResponseEntity<Void> actualizarEstadoHabitacionManualmenteInterno(
+    @PutMapping("/interno/{id}/eventos-reserva")
+    ResponseEntity<Void> aplicarEventoReserva(
             @PathVariable Long id,
-            @PathVariable Long idEstado
+            @RequestParam EventoReserva evento
     );
 }

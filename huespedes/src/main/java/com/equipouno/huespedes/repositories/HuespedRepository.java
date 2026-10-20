@@ -31,7 +31,7 @@ public interface HuespedRepository extends JpaRepository<Huesped, Long> {
 
     @Query("""
         SELECT CASE WHEN COUNT(h) = 0 THEN true ELSE false END
-        FROM HUESPED h
+        FROM Huesped h
         WHERE (
             h.email = :email OR
             h.telefono = :telefono OR
