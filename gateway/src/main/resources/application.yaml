@@ -4,30 +4,35 @@ server:
 spring:
   application:
     name: gateway
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:9000/oauth2/jwks
   cloud:
     gateway:
       server:
         webflux:
           routes:
-            - id: medicos
-              uri: lb://medicos
+            - id: reservas
+              uri: lb://reservas
               predicates:
-                - Path=/api/medicos/**
+                - Path=/api/reservas/**
               filters:
                 - StripPrefix=2
-#            - id: pacientes
-#              uri: lb://pacientes
-#              predicates:
-#                - Path=/api/pacientes/**
-#              filters:
-#                - StripPrefix=2
-#
-#            - id: citas
-#              uri: lb://citas
-#              predicates:
-#                - Path=/api/citas/**
-#              filters:
-#                - StripPrefix=2
+
+            - id: huespedes
+              uri: lb://huespedes
+              predicates:
+                - Path=/api/huespedes/**
+              filters:
+                - StripPrefix=2
+            - id: habitaciones
+              uri: lb://habitaciones
+              predicates:
+                - Path=/api/habitaciones/**
+              filters:
+                - StripPrefix=2
     loadbalancer:
       enabled: true
 eureka:

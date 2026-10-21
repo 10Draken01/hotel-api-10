@@ -128,11 +128,11 @@ public class HuespedServiceImpl implements HuespedService{
 
     private void validarHuespedUnico(HuespedRequest request){
         if (huespedRepository.existsByEmailAndEstadoRegistro(
-                request.email(),
+                request.email().trim().toLowerCase(),
                 EstadoRegistro.ACTIVO
         ))
             throw new ConflictoException(
-                    "Ya existe un huesped con el email: " + request.email()
+                    "Ya existe un huesped con el email: " + request.email().trim().toLowerCase()
             );
         if(huespedRepository.existsByTelefonoAndEstadoRegistro(
                 request.telefono(),
@@ -143,23 +143,23 @@ public class HuespedServiceImpl implements HuespedService{
             );
         if(huespedRepository.existsByTipoDocumentoAndNumeroDocumentoAndEstadoRegistro(
                     TipoDocumento.obtenerPorDescripcion(request.tipoDocumento()),
-                    request.numeroDocumento(),
+                    request.numeroDocumento().trim(),
                     EstadoRegistro.ACTIVO
         ))
             throw new ConflictoException(
                     "Ya existe un huesped con el tipo de documento: " + request.tipoDocumento() +
-                            " y numero de documento: " + request.numeroDocumento()
+                            " y numero de documento: " + request.numeroDocumento().trim()
             );
     }
 
     private void validarHuespedCambiosUnicos(HuespedRequest request, Long idExclude){
         if (huespedRepository.existsByEmailAndEstadoRegistroAndIdNot(
-                request.email(),
+                request.email().trim().toLowerCase(),
                 EstadoRegistro.ACTIVO,
                 idExclude
         ))
             throw new ConflictoException(
-                    "Ya existe un huesped con el email: " + request.email()
+                    "Ya existe un huesped con el email: " + request.email().trim().toLowerCase()
             );
         if(huespedRepository.existsByTelefonoAndEstadoRegistroAndIdNot(
                 request.telefono(),
@@ -171,13 +171,13 @@ public class HuespedServiceImpl implements HuespedService{
             );
         if(huespedRepository.existsByTipoDocumentoAndNumeroDocumentoAndEstadoRegistroAndIdNot(
                 TipoDocumento.obtenerPorDescripcion(request.tipoDocumento()),
-                request.numeroDocumento(),
+                request.numeroDocumento().trim(),
                 EstadoRegistro.ACTIVO,
                 idExclude
         ))
             throw new ConflictoException(
                     "Ya existe un huesped con el tipo de documento: " + request.tipoDocumento() +
-                            " y numero de documento: " + request.numeroDocumento()
+                            " y numero de documento: " + request.numeroDocumento().trim()
             );
     }
 

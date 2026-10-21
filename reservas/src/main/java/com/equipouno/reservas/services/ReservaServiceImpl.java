@@ -87,12 +87,6 @@ public class ReservaServiceImpl implements ReservaService{
             );
     }
 
-
-    private final List<EstadoReserva> RESERVAS_ACTIVAS = List.of(
-            EstadoReserva.CONFIRMADA,
-            EstadoReserva.EN_CURSO
-    );
-
     @Override
     @Transactional(readOnly = true)
     public ReservaActivaResponse obtenerReservaActivaPorHabitacion(Long idHabitacion) {
@@ -147,6 +141,13 @@ public class ReservaServiceImpl implements ReservaService{
         HuespedResponse huesped = obtenerHuesped(request.idHuesped());
         HabitacionResponse habitacion = obtenerHabitacionDisponible(request.idHabitacion());
 
+        if(request.numeroPersonas() > habitacion.capacidad()) {
+            throw new ConflictoException(
+                    String.format("El número de personas (%d) excede la capacidad máxima de la habitación (%d)",
+                            request.numeroPersonas(), habitacion.capacidad())
+            );
+        }
+
         BigDecimal precioNoche = habitacion.precio();
 
 
@@ -183,10 +184,17 @@ public class ReservaServiceImpl implements ReservaService{
                 request.fechaSalida()
         );
 
+        HuespedResponse huesped = obtenerHuesped(reserva.getIdHuesped());
+        HabitacionResponse habitacion = obtenerHabitacion(reserva.getIdHabitacion());
+
         Reserva reservaGuardada = reservaRepository.save(reserva);
         log.info("Reserva ID: {} actualizada exitosamente. Nuevo total: {}", id, reservaGuardada.getPrecioTotal());
 
-        return reservaMapper.entidadAResponse(reserva);
+        return reservaMapper.entidadAResponse(
+                reserva,
+                huesped,
+                habitacion
+        );
     }
 
     @Override

@@ -47,7 +47,16 @@ public class HabitacionServiceImpl implements HabitacionService {
     @Override
     public HabitacionResponse obtenerHabitacionPorIdDisponible(Long id) {
         log.info("Buscando habitacion disponible con id {}", id);
-        return habitacionMapper.entidadAResponse(obtenerHabitacionDisponiblePorId(id));
+        Habitacion habitacion = obtenerHabitacionDisponiblePorId(id);
+
+        if (habitacion.getEstadoHabitacion().equals(EstadoHabitacion.OCUPADA))
+            throw new ConflictoException("La habitacion con id " + id + " se encuentra ocupada");
+        if (habitacion.getEstadoHabitacion().equals(EstadoHabitacion.LIMPIEZA))
+            throw new ConflictoException("La habitacion con id " + id + " se encuentra en limpieza");
+        if(habitacion.getEstadoHabitacion().equals(EstadoHabitacion.MANTENIMIENTO))
+            throw new ConflictoException("La habitacion con id " + id + " se encuentra en mantenimiento");
+
+        return habitacionMapper.entidadAResponse(habitacion);
     }
 
     //PATCH /{id}/estado/{idEstado} - actualizar manualmente el estado de la habitacion
@@ -178,19 +187,20 @@ public class HabitacionServiceImpl implements HabitacionService {
     private void validarDatosUnicos(HabitacionRequest request){
         log.info("Validando numero de habitacion unico");
         if(habitacionRepository.existsByNumeroAndEstadoRegistro(request.numero(), EstadoRegistro.ACTIVO))
-            throw new DatoInvalidoException("Ya existe una habitacion con ese numero");
+            throw new ConflictoException("Ya existe una habitacion con ese numero");
     }
 
     private void validarCambiosUnicos(HabitacionRequest request, Long id){
         log.info("Validando cambio en el numero de habitacion único");
         if(habitacionRepository.existsByNumeroAndEstadoRegistroAndIdNot(request.numero(), EstadoRegistro.ACTIVO, id))
-            throw new DatoInvalidoException("Ya existe una habitacion con ese numero");
+            throw new ConflictoException("Ya existe una habitacion con ese numero");
     }
 
     private Habitacion obtenerHabitacionDisponiblePorId(Long id){
         log.info("Obteniendo habitacion disponible por id {}", id);
-        return habitacionRepository.findByIdAndEstadoRegistroAndEstadoHabitacion(id, EstadoRegistro.ACTIVO, EstadoHabitacion.DISPONIBLE)
+
+        return habitacionRepository.findByIdAndEstadoRegistro(id, EstadoRegistro.ACTIVO)
                 .orElseThrow(() -> new RecursoNoEncontradoException(
-                        "Habitacion disponible no encontrada con id: " + id));
+                        "Habitacion no encontrada con id: " + id));
     }
 }

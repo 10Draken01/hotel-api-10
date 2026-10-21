@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Objects;
 
 @Entity
 @Table(name = "RESERVA")
@@ -55,33 +56,19 @@ public class Reserva {
     @Enumerated(EnumType.STRING)
     private EstadoRegistro estadoRegistro;
 
-    private static void validarFechasNoNulas(LocalDate fechaEntrada, LocalDate fechaSalida){
-        // Validar que la fecha de entrada y fin no sean nulas
-        DateUtils.validarFechaRequerida(
-                fechaEntrada,
-                "La fecha de entrada es requerida"
-        );
-        DateUtils.validarFechaRequerida(
-                fechaSalida,
-                "La fecha de salida es requerida"
-        );
-        // Validar que la fecha de entrada sea mayor o igual a la fecha actual
-        DateUtils.validarFechaMayorActual(
-                fechaEntrada,
-                "La fecha de entrada debe ser mayor o igual a la fecha actual"
-        );
-        // Validar que la fecha de entrada sea menor a la fecha de salida
+    private static void validarFechas(LocalDate fechaEntrada, LocalDate fechaSalida){
+        DateUtils.validarFechaRequerida(fechaEntrada, "La fecha de entrada es requerida");
+        DateUtils.validarFechaRequerida(fechaSalida, "La fecha de salida es requerida");
         DateUtils.validarFechaInicioMenorFin(
                 fechaEntrada,
                 fechaSalida,
                 "La fecha de entrada debe ser menor a la fecha de salida"
         );
     }
+
     private static void validarDatos(
             Long idHuesped,
             Long idHabitacion,
-            LocalDate fechaEntrada,
-            LocalDate fechaSalida,
             Integer numeroPersonas,
             BigDecimal precioNoche
     ){
@@ -94,26 +81,6 @@ public class Reserva {
         ValoresNumericosUtils.validarPositivo(
                 idHabitacion,
                 "El id de la habitacion debe ser un valor positivo"
-        );
-        // Validar que la fecha de entrada y fin no sean nulas
-        DateUtils.validarFechaRequerida(
-                fechaEntrada,
-                "La fecha de entrada es requerida"
-        );
-        DateUtils.validarFechaRequerida(
-                fechaSalida,
-                "La fecha de salida es requerida"
-        );
-        // Validar que la fecha de entrada sea mayor o igual a la fecha actual
-        DateUtils.validarFechaMayorActual(
-                fechaEntrada,
-                "La fecha de entrada debe ser mayor o igual a la fecha actual"
-        );
-        // Validar que la fecha de entrada sea menor a la fecha de salida
-        DateUtils.validarFechaInicioMenorFin(
-                fechaEntrada,
-                fechaSalida,
-                "La fecha de entrada debe ser menor a la fecha de salida"
         );
         // Validar que el numero de personas sea positivo
         ValoresNumericosUtils.validarPositivo(
@@ -149,11 +116,6 @@ public class Reserva {
             throw new ConflictoException("El estado de la reserva no puede ser nulo");
     }
 
-    public void asignarEstadoReserva(EstadoReserva estadoReserva){
-        validarEstadoReservaNoNulo(estadoReserva);
-        this.estadoReserva = estadoReserva;
-    }
-
     public void cambiarEstadoReserva(EstadoReserva estadoReserva){
         validarEstadoReservaNoNulo(estadoReserva);
         validarNoEliminado();
@@ -169,33 +131,18 @@ public class Reserva {
             LocalDate fechaEntrada,
             LocalDate fechaSalida
     ){
-        validarNoEliminado();
-        validarFechasNoNulas(fechaEntrada, fechaSalida);
-        //Comento el metodo, no se elimina por si hay que validarlo en otro moemtno
-        //validarNoCambioRestoDeDatos(idHuesped, idHabitacion, numeroPersonas, precioNoche, precioTotal);
-        switch (this.estadoReserva) {
-            case CONFIRMADA -> {
-                actualizarPorEstadoConfirmada(fechaEntrada, fechaSalida);
-                recalcularPrecioTotal();
-            }
-            case EN_CURSO -> {
-                actualizarPorEstadoEnCurso(fechaEntrada, fechaSalida);
-                recalcularPrecioTotal();
-            }
-            default ->
-                throw new ConflictoException("No se puede modificar una reserva en estado " + this.estadoReserva); // -> 409 Conflict
-        }
-    }
+        validarNoEliminado();  // 409
+        if (!this.estadoReserva.isActualizable())                                      // FINALIZADA / CANCELADA
+            throw new ConflictoException("No se puede modificar una reserva en estado " + this.estadoReserva);
+        validarFechas(fechaEntrada, fechaSalida);                                      // 400
 
-    public void actualizarPorEstadoConfirmada(
-            LocalDate nuevaFechaEntrada,
-            LocalDate nuevaFechaSalida
-    ){
-        if (!nuevaFechaEntrada.isBefore(nuevaFechaSalida)) {
-            throw new ConflictoException("La fecha de entrada debe ser estrictamente anterior a la fecha de salida"); // -> 409 Conflict
+        if (this.estadoReserva == EstadoReserva.CONFIRMADA) {
+            this.fechaEntrada = fechaEntrada;
+            this.fechaSalida = fechaSalida;
+        } else {
+            actualizarPorEstadoEnCurso(fechaEntrada, fechaSalida);                     // solo salida, si no 409
         }
-        this.fechaEntrada = nuevaFechaEntrada;
-        this.fechaSalida = nuevaFechaSalida;
+        recalcularPrecioTotal();
     }
 
     public void actualizarPorEstadoEnCurso(
@@ -216,29 +163,6 @@ public class Reserva {
         this.precioTotal = this.precioNoche.multiply(BigDecimal.valueOf(noches));
     }
 
-    private void validarNoCambioRestoDeDatos(
-            Long idHuespedRecibido,
-            Long idHabitacionRecibido,
-            Integer numeroPersonasRecibido,
-            BigDecimal precioNocheRecibido,
-            BigDecimal precioTotalRecibido
-    ){
-        if (!this.idHuesped.equals(idHuespedRecibido))
-            throw new ConflictoException("No está permitido cambiar al huésped de una reserva existente"); // -> 409 Conflict
-
-        if (!this.idHabitacion.equals(idHabitacionRecibido))
-            throw new ConflictoException("No está permitido cambiar la habitacion de una reserva existente"); // -> 409 Conflict
-
-        if (!this.numeroPersonas.equals(numeroPersonasRecibido))
-            throw new ConflictoException("No está permitido cambiar el numero de personas de una reserva existente"); // -> 409 Conflict
-
-        if (!this.precioNoche.equals(precioNocheRecibido))
-            throw new ConflictoException("No está permitido cambiar el precio de la noche de una reserva existente"); // -> 409 Conflict
-
-        if (!this.precioTotal.equals(precioTotalRecibido))
-            throw new ConflictoException("No está permitido cambiar el precio total de una reserva existente"); // -> 409 Conflict
-    }
-
     public static Reserva crear(
             Long idHuesped,
             Long idHabitacion,
@@ -250,11 +174,10 @@ public class Reserva {
         validarDatos(
                 idHuesped,
                 idHabitacion,
-                fechaEntrada,
-                fechaSalida,
                 numeroPersonas,
                 precioNoche
         );
+        validarFechas(fechaEntrada, fechaSalida);
         Reserva reserva = Reserva.builder()
                 .idHuesped(idHuesped)
                 .idHabitacion(idHabitacion)
