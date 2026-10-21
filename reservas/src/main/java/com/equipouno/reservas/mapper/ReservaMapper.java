@@ -51,7 +51,8 @@ public class ReservaMapper implements CommonMapper<ReservaCrearRequest, ReservaR
                 reserva.getNumeroPersonas(),
                 reserva.getPrecioNoche(),
                 reserva.getPrecioTotal(),
-                reserva.getEstadoReserva().getDescripcion()
+                reserva.getEstadoReserva().getDescripcion(),
+                reserva.getEstadoRegistro().toString()
         );
     }
     public ReservaResponse entidadAResponse(Reserva reserva, HuespedResponse huespedResponse, HabitacionResponse habitacionResponse) {
@@ -65,7 +66,8 @@ public class ReservaMapper implements CommonMapper<ReservaCrearRequest, ReservaR
                 reserva.getNumeroPersonas(),
                 reserva.getPrecioNoche(),
                 reserva.getPrecioTotal(),
-                reserva.getEstadoReserva().getDescripcion()
+                reserva.getEstadoReserva().getDescripcion(),
+                reserva.getEstadoRegistro().toString()
         );
     }
 

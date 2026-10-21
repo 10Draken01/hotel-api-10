@@ -34,5 +34,8 @@ public record ReservaResponse(
         BigDecimal precioTotal,
 
         @Schema(description = "Estado de la reserva", example = "CONFIRMADA")
-        String estadoReserva
+        String estadoReserva,
+
+        @Schema(description = "Estado del registro de la reserva", example = "ACTIVO")
+        String EstadoRegistro
 ) { }
