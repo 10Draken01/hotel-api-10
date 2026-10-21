@@ -1,10 +1,7 @@
 package com.equipouno.commons.dto.huespedes;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 
 @Schema(name = "HuespedRequest", description = "Formato de solicitud para crear o actualizar un huésped")
 public record HuespedRequest(
@@ -24,9 +21,9 @@ public record HuespedRequest(
         @Email(message = "El email debe ser válido")
         String email,
 
-        @Schema(description = "Teléfono del huésped", example = "123456789")
+        @Schema(description = "Teléfono del huésped", example = "5512345678")
         @NotNull(message = "El teléfono es requerido")
-        @Size(min = 10, max = 10, message = "El teléfono debe tener 10 caracteres")
+        @Pattern(regexp = "^\\s*\\d{10}\\s*$", message = "El teléfono debe tener exactamente 10 dígitos")
         String telefono,
 
         @Schema(description = "Tipo de documento del huésped", example = "INE")

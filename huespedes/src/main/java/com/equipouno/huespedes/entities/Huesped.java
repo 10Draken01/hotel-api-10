@@ -106,7 +106,6 @@ public class Huesped {
     }
 
     public void asignarTipoDocumento(TipoDocumento tipoDocumento){
-        validarNoEliminado();
         if(tipoDocumento == null)
             throw new DatoInvalidoException("El tipo de documento no puede ser nulo");
         this.tipoDocumento = tipoDocumento;
@@ -121,7 +120,7 @@ public class Huesped {
             String nacionalidad,
             TipoDocumento tipoDocumento
     ){
-        asignarTipoDocumento(tipoDocumento);
+        validarNoEliminado();
         validarDatos(
                 nombre.trim(),
                 apellido.trim(),
@@ -130,6 +129,8 @@ public class Huesped {
                 numeroDocumento.trim(),
                 nacionalidad.trim()
         );
+
+        asignarTipoDocumento(tipoDocumento);
 
         this.nombre = nombre.trim();
         this.apellido = apellido.trim();
