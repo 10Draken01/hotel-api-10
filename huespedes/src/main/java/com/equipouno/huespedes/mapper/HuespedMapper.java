@@ -35,7 +35,8 @@ public class HuespedMapper implements CommonMapper<HuespedRequest, HuespedRespon
         return huesped == null ? null
                 : new HuespedResponse(
                         huesped.getId(),
-                        huesped.obtenerNombreCompleto(),
+                        huesped.getNombre(),
+                        huesped.getApellido(),
                         huesped.getEmail(),
                         huesped.getTelefono(),
                         huesped.getTipoDocumento().getDescription(),
