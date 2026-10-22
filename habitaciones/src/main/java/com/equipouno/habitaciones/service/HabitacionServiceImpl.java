@@ -49,12 +49,14 @@ public class HabitacionServiceImpl implements HabitacionService {
         log.info("Buscando habitacion disponible con id {}", id);
         Habitacion habitacion = obtenerHabitacionDisponiblePorId(id);
 
-        if (habitacion.getEstadoHabitacion().equals(EstadoHabitacion.OCUPADA))
-            throw new ConflictoException("La habitacion con id " + id + " se encuentra ocupada");
-        if (habitacion.getEstadoHabitacion().equals(EstadoHabitacion.LIMPIEZA))
-            throw new ConflictoException("La habitacion con id " + id + " se encuentra en limpieza");
-        if(habitacion.getEstadoHabitacion().equals(EstadoHabitacion.MANTENIMIENTO))
-            throw new ConflictoException("La habitacion con id " + id + " se encuentra en mantenimiento");
+        if (
+                habitacion.getEstadoHabitacion().equals(EstadoHabitacion.OCUPADA) ||
+                habitacion.getEstadoHabitacion().equals(EstadoHabitacion.LIMPIEZA) ||
+                habitacion.getEstadoHabitacion().equals(EstadoHabitacion.MANTENIMIENTO)
+        )
+            throw new ConflictoException(
+                    "La habitacion con id " + id + " " + habitacion.getEstadoHabitacion().getDescripcion() + " y no puede ser reservada"
+            );
 
         return habitacionMapper.entidadAResponse(habitacion);
     }
