@@ -37,5 +37,5 @@ public record ReservaResponse(
         String estadoReserva,
 
         @Schema(description = "Estado del registro de la reserva", example = "ACTIVO")
-        String EstadoRegistro
+        String estadoRegistro
 ) { }
