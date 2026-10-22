@@ -45,9 +45,6 @@ public class Huesped {
     @Enumerated(EnumType.STRING)
     EstadoRegistro estadoRegistro;
 
-    public String obtenerNombreCompleto(){
-        return nombre + " " + apellido;
-    }
 
     private static void validarDatos(
             String nombre,
